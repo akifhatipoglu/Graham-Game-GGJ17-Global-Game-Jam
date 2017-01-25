@@ -144,22 +144,5 @@ public class WaveCreator : MonoBehaviour
         {
             line.SetPosition(1, hit.point);
         }
-
-        //if (newHit.collider != null && (((hit.collider.gameObject.tag == "Obstacle" || hit.collider.gameObject.tag == "Mirror") &&
-        //!DeletedObstacleNames.Any(obs => obs == hit.collider.gameObject.name || obs == hit.collider.transform.parent.gameObject.name)) ||
-        //    hit.collider.gameObject.tag == "Wall"))
-        //{
-        //    line.SetPosition(1, newHit.point);
-        //    linePrefab.GetComponentInChildren<Line>().MoveTowards(newHit.point);
-
-        //    MirrorLines.Add(newHit.point);
-        //}
-        //else
-        //{
-        //    line.SetPosition(1, reflected);
-        //    linePrefab.GetComponentInChildren<Line>().MoveTowards(reflected);
-
-        //    MirrorLines.Add(reflected);
-        //}
     }
 }
