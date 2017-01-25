@@ -18,7 +18,6 @@ public class Door : MonoBehaviour
 
         CheckWaveCreatorList();
 
-        //waveCreator = RoomSourceObject.GetComponent<WaveCreator>();
         spriteRenderer = this.GetComponent<SpriteRenderer>();
 
         List<RaycastHit> hits = new List<RaycastHit>();
@@ -34,18 +33,10 @@ public class Door : MonoBehaviour
 
             Physics.Linecast(currentPosition.position, this.transform.position, out hit, layerMask);
 
-            if (hit.collider != null && ((hit.collider.gameObject.tag == "Obstacle"
-                && !currentWaveCreator.DeletedObstacleNames.Any(obs => obs == hit.collider.gameObject.name || obs == hit.collider.transform.parent.gameObject.name))
-                || hit.collider.gameObject.tag == "Mirror"))
-            {
-                spriteRenderer.sprite = Resources.Load<Sprite>("Props/kapi 1");
-                hasLightList.Add(false);
-            }
+            if (AnyRayHitsTheDoor(hit, currentWaveCreator))
+                Open();
             else
-            {
-                spriteRenderer.sprite = Resources.Load<Sprite>("Props/kapi2");
-                hasLightList.Add(true);
-            }
+                Close();
         }
 
         if (hasLightList.Any(light => light == true))
@@ -67,36 +58,21 @@ public class Door : MonoBehaviour
             RaycastHit hit;
             Physics.Linecast(currentPosition.position, this.transform.position, out hit, layerMask);
 
-            if (hit.collider != null && ((hit.collider.gameObject.tag == "Obstacle"
-                && !currentWaveCreator.DeletedObstacleNames.Any(obs => obs == hit.collider.gameObject.name || obs == hit.collider.transform.parent.gameObject.name))
-                || hit.collider.gameObject.tag == "Mirror"))
-            {
-                hasLightList.Add(false);
-            }
-            else
-            {
+            if (AnyRayHitsTheDoor(hit, currentWaveCreator))
                 hasLightList.Add(true);
-            }
+            else
+                hasLightList.Add(false);
         }
 
         if (hasLightList.Any(light => light != true))
-        {
-            spriteRenderer.sprite = Resources.Load<Sprite>("Props/kapi 1");
-            hasLight = false;
-        }
+            Close();
         else
-        {
-            spriteRenderer.sprite = Resources.Load<Sprite>("Props/kapi2");
-            hasLight = true;
-        }
+            Open();
     }
 
     public bool IsInCorrectPosition()
     {
-        if (ShouldHaveLight == hasLight)
-            return true;
-        else
-            return false;
+        return ShouldHaveLight == hasLight;
     }
 
     private void CheckWaveCreatorList()
@@ -109,5 +85,48 @@ public class Door : MonoBehaviour
         {
             waveCreatorList.Add(sourceObject.GetComponent<WaveCreator>());
         }
+    }
+
+    private bool AnyRayHitsTheDoor(RaycastHit hit, WaveCreator currentWaveCreator)
+    {
+        bool hasObstacle = hit.collider != null && ((hit.collider.gameObject.tag == "Obstacle"
+            && !currentWaveCreator.DeletedObstacleNames.Any(obs => obs == hit.collider.gameObject.name || obs == hit.collider.transform.parent.gameObject.name))
+            || hit.collider.gameObject.tag == "Mirror");
+
+        if (hasObstacle)
+        {
+            foreach (var hitMirrorLine in currentWaveCreator.MirrorLines.Where(line => Vector3.Distance(line, this.transform.position) < 1.0f))
+            {
+                RaycastHit mirrorLineHit;
+                Physics.Linecast(hitMirrorLine, this.transform.position, out mirrorLineHit, layerMask);
+
+                if (mirrorLineHit.collider != null && ((mirrorLineHit.collider.gameObject.tag == "Obstacle" &&
+                    !currentWaveCreator.DeletedObstacleNames.Any(obs => obs == hit.collider.gameObject.name || obs == hit.collider.transform.parent.gameObject.name))
+                    || mirrorLineHit.collider.gameObject.tag == "Mirror"))
+                {
+                    continue;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private void Open()
+    {
+        spriteRenderer.sprite = Resources.Load<Sprite>("Props/kapi2");
+        hasLight = true;
+    }
+
+    private void Close()
+    {
+        spriteRenderer.sprite = Resources.Load<Sprite>("Props/kapi 1");
+        hasLight = false;
     }
 }
