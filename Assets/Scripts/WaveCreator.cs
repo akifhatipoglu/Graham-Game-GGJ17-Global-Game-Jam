@@ -30,11 +30,15 @@ public class WaveCreator : MonoBehaviour
         Lines.Clear();
         MirrorLines.Clear();
 
-        for (int i = 0; i < RoomHeightLength; i++)
-            DrawLinesToRight(i);
+        for (int angle = 270; angle < 360; angle++)
+        {
+            Vector3 targetVector = new Vector3(this.transform.position.x + ((float)Mathf.Cos(Mathf.Deg2Rad * angle) * 50),
+                                                this.transform.position.y + ((float)Mathf.Sin(Mathf.Deg2Rad * angle) * 50),
+                                                this.transform.position.z);
 
-        for (int i = 0; i < RoomWidthLength; i++)
-            DrawLinesToBottom(i);
+            Debug.Log(targetVector);
+            DrawLine(this.transform.position, targetVector);
+        }
 
         roomController.CheckDoors();
     }
@@ -77,22 +81,53 @@ public class WaveCreator : MonoBehaviour
         else if (hit.collider != null && hit.collider.gameObject.tag == "Mirror")
         {
             line.SetPosition(1, hit.point);
-            linePrefab.GetComponentInChildren<Line>().MoveTowards(hit.point);
+            //linePrefab.GetComponentInChildren<Line>().MoveTowards(hit.point);
 
             DrawNewMirrorLine(lineTransform, hit);
         }
         else
         {
             line.SetPosition(1, target);
-            linePrefab.GetComponentInChildren<Line>().MoveTowards(target);
+            //linePrefab.GetComponentInChildren<Line>().MoveTowards(target);
         }
     }
 
-    Vector3 getReflectionVector(float rotation)
+    private void DrawNewMirrorLine(Transform sourceLine, RaycastHit hit)
     {
-        
+        Vector3 reflected = Vector3.Reflect(sourceLine.position, getReflectionVector(hit.collider.gameObject.transform.rotation.z));
+
+        Debug.DrawRay(hit.point, hit.normal, Color.magenta, 10f);
+
+        GameObject linePrefab = Instantiate(Resources.Load("Prefabs/LineWithElectricity") as GameObject);
+        linePrefab.transform.SetParent(this.transform);
+        linePrefab.gameObject.name += "_mirror";
+        Transform lineTransform = linePrefab.GetComponentInChildren<Line>().transform;
+
+        Lines.Add(linePrefab);
+
+        LineRenderer line = linePrefab.GetComponent<LineRenderer>();
+        line.SetPosition(0, hit.point);
+
+        RaycastHit newHit;
+        Physics.Linecast(hit.point, reflected * 100, out newHit, layerMask);
+
+        if (newHit.collider != null)
+        {
+            line.SetPosition(1, newHit.point);
+            //linePrefab.GetComponentInChildren<Line>().MoveTowards(newHit.point);
+            MirrorLines.Add(newHit.point);
+        }
+        else
+        {
+            line.SetPosition(1, hit.point);
+        }
+    }
+
+    private Vector3 getReflectionVector(float rotation)
+    {
+
         Vector3 result = Vector3.zero;
-        if((rotation > -0.75f && rotation < -0.65f) || (rotation > 0.68f && rotation < 0.72f))
+        if ((rotation > -0.75f && rotation < -0.65f) || (rotation > 0.68f && rotation < 0.72f))
         {
             result = Vector3.right;
         }
@@ -114,35 +149,5 @@ public class WaveCreator : MonoBehaviour
 
         Debug.Log("rotation: " + rotation + " result: " + result);
         return result;
-    }
-    private void DrawNewMirrorLine(Transform sourceLine, RaycastHit hit)
-    {
-        Vector3 reflected = Vector3.Reflect(sourceLine.position, getReflectionVector(hit.collider.gameObject.transform.rotation.z));
-      
-        Debug.DrawRay(hit.point, hit.normal, Color.magenta, 10f);
-
-        GameObject linePrefab = Instantiate(Resources.Load("Prefabs/LineWithElectricity") as GameObject);
-        linePrefab.transform.SetParent(this.transform);
-        linePrefab.gameObject.name += "_mirror";
-        Transform lineTransform = linePrefab.GetComponentInChildren<Line>().transform;
-
-        Lines.Add(linePrefab);
-
-        LineRenderer line = linePrefab.GetComponent<LineRenderer>();
-        line.SetPosition(0, hit.point);
-        
-        RaycastHit newHit;
-        Physics.Linecast(hit.point, reflected * 100, out newHit, layerMask);
-
-        if (newHit.collider != null)
-        {
-            line.SetPosition(1, newHit.point);
-            linePrefab.GetComponentInChildren<Line>().MoveTowards(newHit.point);
-            MirrorLines.Add(newHit.point);
-        }
-        else
-        {
-            line.SetPosition(1, hit.point);
-        }
     }
 }
